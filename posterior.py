@@ -38,19 +38,25 @@ class Posteriorsamples():
         
             
         header_file = os.path.join(self.output_dir, 'header.txt')
-        self.names = np.genfromtxt(header_file, dtype = 'str')[0:-1] #ignoring last column which is LogL
+        self.names  = np.genfromtxt(header_file, dtype = 'str')[0:-1] #ignoring last column which is LogL
         samples_path = os.path.join(self.output_dir, self.samples_filename)
         
         samples_df = pd.read_csv(samples_path, sep =' ', names=self.names, skiprows=2, 
                                  usecols = [i for i in range(len(self.names))])
                                  
         
+        n_gauss = (len(samples_df.keys())+1)//3
+        w_ngauss = 1 - np.sum([samples_df[f'w_{i+1}'].to_numpy() for i in range(n_gauss-1)], axis = 0)
+
+        samples_df.insert(n_gauss-1, f"w_{n_gauss}", w_ngauss)
         
 
         self.samples = dict()
         for name in samples_df.keys():
             self.samples[name] = samples_df[name].to_numpy()
         
+        #update self.names
+        self.names = list(self.samples.keys())
         return self.samples
      
 
