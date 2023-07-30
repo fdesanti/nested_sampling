@@ -38,14 +38,14 @@ class GaussianMixtureModel(cpnest.model.Model):
         self.bounds = []
         
         #define model paramters
-        self.names.extend(['w_{0}'.format(i+1) for i in range(self.num_gauss)])
-        self.bounds.extend([[0, 1] for _ in range(self.num_gauss)])
+        self.names.extend([f'w_{i+1}' for i in range(self.num_gauss-1)])
+        self.bounds.extend([[0, 1] for _ in range(self.num_gauss-1)])
         
-        self.names.extend(['mu_{0}'.format(i+1) for i in range(self.num_gauss)])
-        self.bounds.extend([[-2,6] for _ in range(self.num_gauss)])
+        self.names.extend([f'mu_{i+1}' for i in range(self.num_gauss)])
+        self.bounds.extend([[-2, 6] for _ in range(self.num_gauss)])
         
-        self.names.extend(['sigma_{0}'.format(i+1) for i in range(self.num_gauss)])
-        self.bounds.extend([[0.1,5] for _ in range(self.num_gauss)])
+        self.names.extend([f'sigma_{i+1}' for i in range(self.num_gauss)])
+        self.bounds.extend([[0.1, 5] for _ in range(self.num_gauss)])
         
         #self.names.extend(['sigma'])
         #self.bounds.extend([[1, 10]])
@@ -61,14 +61,15 @@ class GaussianMixtureModel(cpnest.model.Model):
 
         L = np.zeros(self.data['y'].shape)
         for i in range(self.num_gauss):
+            if i < self.num_gauss-1:
+                weight   = p[f'w_{i+1}']
+            else:
+                weight   = 1 - np.sum([p[f'w_{j+1}'] for j in range(self.num_gauss-1) ])
+            #weight   = p['w_{0}'.format(i+1)]
+            residual = self.data['y']-p[f'mu_{i+1}']
+            sigma    = p[f'sigma_{i+1}']
 
-            #weight = 1 - np.sum([p['w_{0}'.format(i+1)] for j in range(self.num_gauss) if i != j  ])
-            weight = p['w_{0}'.format(i+1)]
-
-            residual = self.data['y']-p['mu_{0}'.format(i+1)]
-            sigma    = p['sigma_{0}'.format(i+1)]
-
-            logL_i = (np.log(weight) - np.log(np.sqrt(2*np.pi) *  p['sigma_{0}'.format(i+1)]) 
+            logL_i = (np.log(weight)- np.log(np.sqrt(2*np.pi) *  sigma) 
                 - 0.5*(residual/sigma)**2 )
             
             L  += np.exp(logL_i)
@@ -85,32 +86,20 @@ class GaussianMixtureModel(cpnest.model.Model):
         
     
     def log_prior(self, p): 
-        '''
-        Computes the log prior. 
-        Always checks whether the weights sum up to 1: 
-            returns -inf in wrong cases
-        If additional_prior = True: checks also that the means are sorted in ascending order (not mixed)
-            returns -inf in wrong cases
-
-        Otherwise:
-            returns -log_prior (uniform) over the parameters 
-        '''
-
-
-        mu_params = [p['mu_{0}'.format(i+1)] for i in range(self.num_gauss)]
-        #mu_diffs  = np.diff(mu_params)
-        #min_diff  = abs(np.min(mu_diffs))
-        weights = np.array([p['w_{0}'.format(i+1)] for i in range(self.num_gauss)])
-        sum_weights   = sum([p['w_{0}'.format(i+1)] for i in range(self.num_gauss)])
+        
+        
         
         ''' CHECK WEIGHTS SUM UP TO 1
         This is the best working option: 
         tried also softmax and normalization but the results are bad
         '''
-        if abs(1 - sum_weights) >= 1e-3:
+        sum_weights   = sum([p[f'w_{i+1}'] for i in range(self.num_gauss-1)])
+        
+        if sum_weights > 1:
             return -np.inf
         
         ''' SOFTMAX
+        weights = np.array([p['w_{0}'.format(i+1)] for i in range(self.num_gauss)])
         norm_weights = softmax(weights)
         for i in range(self.num_gauss):
             p['w_{0}'.format(i+1)] = norm_weights[i]
@@ -122,6 +111,7 @@ class GaussianMixtureModel(cpnest.model.Model):
         '''
         
         if self.additional_priors:
+            mu_params = [p[f'mu_{i+1}'] for i in range(self.num_gauss)]
             if not mu_params == sorted(mu_params) :
                 return -np.inf
         
