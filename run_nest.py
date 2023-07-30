@@ -84,7 +84,7 @@ def main():
     work=cpnest.CPNest(model, verbose=2,
                     nthreads = n_cpu, 
                     nlive=nlive, maxmcmc=5000, nslice=0, nhamiltonian=0, seed = seed,
-                    resume=True, periodic_checkpoint_interval=5*3600,output=out_folder, 
+                    resume=True, periodic_checkpoint_interval=8*3600,output=out_folder, 
                     )
     if not os.path.exists(chain_file) or overwrite:
               

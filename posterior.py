@@ -147,7 +147,7 @@ class Posteriorsamples():
         #plotting mean posterior
          
          y = sum_of_gaussians(x, self.best_estimates)
-         plt.plot(x, y, label='posterior', color='r')
+         plt.plot(x, y, label='median', color='r')
          
          plt.minorticks_on()
          plt.legend(loc = 'upper left')
