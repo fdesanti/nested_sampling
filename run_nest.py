@@ -28,6 +28,8 @@ def main():
     parser.add_option("-s", "--seed", default = 123, help="seed")
     parser.add_option("-l", "--nlive", default=1500, help="Number of Live Points")
     parser.add_option("-o", "--overwrite", default=False, action="store_true", help="Overwrites existing results")
+    parser.add_option("-e", "--gaussian_errors", default=False, action="store_true", help="Considers Gaussian Errors on logT90")
+
 
 
     (options, args) = parser.parse_args()
@@ -39,6 +41,7 @@ def main():
     nlive   = int(options.nlive)
     overwrite = options.overwrite
     additional_priors = options.additional_priors
+    gaussian_errors   = options.gaussian_errors
     
 
 
@@ -64,12 +67,16 @@ def main():
     plot_data_histogram(logT90)
     
     #---- NESTED SAMPLING ----
-    model=GaussianMixtureModel(data = {'y': logT90}, num_gauss = n_gauss, additional_priors = additional_priors)
+    model=GaussianMixtureModel(data = {'y': logT90, 'dy':dlogT90}, num_gauss = n_gauss, 
+                               additional_priors = additional_priors, gaussian_errors=gaussian_errors)
     if additional_priors:
         out_folder = 'results/'+ str(model.num_gauss)+'gauss_additional_priors'
     else:
          
          out_folder = 'results/'+str(model.num_gauss)+'gauss'
+
+    if gaussian_errors:
+        out_folder += '_gaussian_errors'
         
 
     chain_file = out_folder+'/chain_'+str(nlive)+str(seed)+'.txt'

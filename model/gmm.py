@@ -28,10 +28,12 @@ class GaussianMixtureModel(cpnest.model.Model):
     """
     An n-dimensional gaussian
     """
-    def __init__(self, data, num_gauss, additional_priors = True):
-        self.data = data
+    def __init__(self, data, num_gauss, additional_priors = True, gaussian_errors=False):
+        self.y  = data['y']
+        self.dy = data['dy']
         self.num_gauss = num_gauss
         self.additional_priors = additional_priors
+        self.gaussian_errors   = gaussian_errors
         #self.sigma = 3.0
         
         self.names  = []
@@ -59,18 +61,21 @@ class GaussianMixtureModel(cpnest.model.Model):
         return logL.sum()
         '''
 
-        L = np.zeros(self.data['y'].shape)
+        L = np.zeros(self.y.shape)
         for i in range(self.num_gauss):
             if i < self.num_gauss-1:
                 weight   = p[f'w_{i+1}']
             else:
                 weight   = 1 - np.sum([p[f'w_{j+1}'] for j in range(self.num_gauss-1) ])
             #weight   = p['w_{0}'.format(i+1)]
-            residual = self.data['y']-p[f'mu_{i+1}']
-            sigma    = p[f'sigma_{i+1}']
+            residual = self.y-p[f'mu_{i+1}']
+            sigma2    = p[f'sigma_{i+1}']**2  #sigma squared (variance)
+            if self.gaussian_errors:
+                sigma2 += self.dy**2
+                
 
-            logL_i = (np.log(weight)- np.log(np.sqrt(2*np.pi) *  sigma) 
-                - 0.5*(residual/sigma)**2 )
+            logL_i = (np.log(weight)- np.log(np.sqrt(2*np.pi*sigma2)) 
+                - 0.5*(residual)**2/sigma2 )
             
             L  += np.exp(logL_i)
             #L += weight/(np.sqrt(2*np.pi)*sigma) * np.exp(-(residual/sigma)**2)
