@@ -13,6 +13,7 @@ from model.gmm import gaussian, sum_of_gaussians
 from utils import *
 
 blue_color = mcolors.TABLEAU_COLORS['tab:blue']
+colours = [mcolors.TABLEAU_COLORS[key] for key in mcolors.TABLEAU_COLORS.keys()]
 
 
 class Posteriorsamples():
@@ -105,10 +106,10 @@ class Posteriorsamples():
          return self.best_estimates, self.best_estimates_cl
      
 
-     def plot_posterior_mixture(self, plot_variance = True, data = None, nbins = 'fd', 
-                                data_label = 'logT90', density = True, CL=68):
+     def plot_posterior_mixture(self, data = None, nbins = 'fd', 
+                                data_label = 'logT90', density = True, CL=None):
          
-         percentiles = [(100-CL)/2, 100-(100-CL)/2]
+         
         
          if self.best_estimates is None:
              self.get_best_estimate()
@@ -119,7 +120,8 @@ class Posteriorsamples():
          plt.figure()
          #plotting variances of reconstructed posterior
          
-         if plot_variance:
+         if CL is not None:
+             percentiles = [(100-CL)/2, 100-(100-CL)/2]
              y = []
              for _ in range(10000):
                  p = dict()
@@ -146,7 +148,7 @@ class Posteriorsamples():
              plt.fill_between(x, low, high,color = 'mistyrose', alpha = 1, label = f'{CL}% CI')
 
          if data is not None:
-             plt.hist(data, bins = nbins, density = density, histtype='step', alpha = 1, label = 'data')
+             plt.hist(data, bins = nbins, density = density, histtype='step', alpha = 1, label = 'data', linewidth=1.5)
              #plt.hist(data, bins = nbins, density = density, histtype='stepfilled', color = blue_color, alpha = 0.5)
              plt.xlabel(data_label)
              plt.xlim(min(data)-0.5, max(data)+0.5)
@@ -154,12 +156,26 @@ class Posteriorsamples():
 
         #plotting mean posterior
          
+         
+         
+         if CL is None:
+            for i in range(len(self.best_estimates)//3):
+                w = self.best_estimates[f'w_{i+1}']
+                mu = self.best_estimates[f'mu_{i+1}']
+                sigma = self.best_estimates[f'sigma_{i+1}']
+                y = gaussian(x, w, mu, sigma)
+                plt.plot(x, y, color= colours[i])
+                plt.fill_between(x, 0*x, y,color = colours[i], alpha = 0.3)
+         
          y = sum_of_gaussians(x, self.best_estimates)
-         plt.plot(x, y, label='median', color='r')
+         plt.plot(x, y, label='reconstructed', color='r')
          
          plt.minorticks_on()
          plt.legend(loc = 'upper left')
-         fname = f'{self.output_dir}/posterior_plot_CL_{CL}.png'
+         if CL is not None:
+             fname = f'{self.output_dir}/posterior_plot_CL_{CL}.png'
+         else:
+             fname = f'{self.output_dir}/posterior_plot_mixtures.png'
          plt.savefig(fname, dpi=200)
          plt.show()
 
