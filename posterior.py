@@ -107,7 +107,7 @@ class Posteriorsamples():
      
 
      def plot_posterior_mixture(self, data = None, nbins = 'fd', 
-                                data_label = 'logT90', density = True, CL=None):
+                                data_label = 'log$T_{90}$', density = True, CL=None):
          
          
         
