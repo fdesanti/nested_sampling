@@ -106,7 +106,9 @@ class Posteriorsamples():
      
 
      def plot_posterior_mixture(self, plot_variance = True, data = None, nbins = 'fd', 
-                                data_label = 'logT90', density = True):
+                                data_label = 'logT90', density = True, CL=68):
+         
+         percentiles = [(100-CL)/2, 100-(100-CL)/2]
         
          if self.best_estimates is None:
              self.get_best_estimate()
@@ -122,20 +124,26 @@ class Posteriorsamples():
              for _ in range(10000):
                  p = dict()
                  for name in self.names:
-                     p[name] = np.random.uniform(low  = self.best_estimates_cl[name][0], 
-                                                 high = self.best_estimates_cl[name][1], size=1)[0]
-                  
+                     i = np.random.randint(len(self.samples['mu_1']))
+
+                     #p[name] = np.random.uniform(low  = self.best_estimates_cl[name][0], high = self.best_estimates_cl[name][1], size=1)[0]
+
+                     p[name] = self.samples[name][i]
                  #y = sum_of_gaussians(x, p)
                  y.append(sum_of_gaussians(x, p))
-             y=np.array(y).T
+             y=np.array(y)
+             '''
              y_max = np.zeros(len(x))
              y_min = np.zeros(len(x))
              for i in range(len(x)):
                  y_max[i] = max(y[i])
                  y_min[i] = min(y[i])
+             '''
+             low = np.percentile(y, percentiles[0], axis = 0)
+             high = np.percentile(y, percentiles[1], axis = 0)
 
 
-             plt.fill_between(x, y_min, y_max,color = 'mistyrose', alpha = 1, label = self.CL+'% CI')
+             plt.fill_between(x, low, high,color = 'mistyrose', alpha = 1, label = f'{CL}% CI')
 
          if data is not None:
              plt.hist(data, bins = nbins, density = density, histtype='step', alpha = 1, label = 'data')
@@ -151,7 +159,7 @@ class Posteriorsamples():
          
          plt.minorticks_on()
          plt.legend(loc = 'upper left')
-         fname = self.output_dir+'/posterior_plot_CL_'+self.CL+'.png'
+         fname = f'{self.output_dir}/posterior_plot_CL_{CL}.png'
          plt.savefig(fname, dpi=200)
          plt.show()
 
