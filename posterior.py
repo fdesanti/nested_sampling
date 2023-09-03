@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import corner
 import numpy as np
+from tqdm import tqdm
 #import arviz as az
 #import xarray as xr
 from chainconsumer import ChainConsumer
@@ -168,7 +169,7 @@ class Posteriorsamples():
                 plt.fill_between(x, 0*x, y,color = colours[i], alpha = 0.3)
          
          y = sum_of_gaussians(x, self.best_estimates)
-         plt.plot(x, y, label='reconstructed', color='r')
+         plt.plot(x, y, label='reconstructed', color='r', linewidth=2)
          
          plt.minorticks_on()
          plt.legend(loc = 'upper left')
@@ -230,4 +231,31 @@ class Posteriorsamples():
             print('P(k = %d) = %.3f' %(component, P))
             
          return P
+     
+     def compute_evidence(self, logT90, N = int(1e6), verbose = True):
+         """LogT90 is an array"""
+         n_gauss = len(self.names)//3
+         
+         #computing Z
+         Z = 0
+         
+         for _ in tqdm(range(N)):
+            Z_i = 0 
+            for n in range(n_gauss):
+                i,j,k = np.random.randint(3, size=3)
+                w     = self.samples['w_{0}'.format(n+1)][i]
+                mu    = self.samples['mu_{0}'.format(n+1)][j]
+                sigma = self.samples['sigma_{0}'.format(n+1)][k]
+                Z_i += gaussian(logT90, w, mu, sigma)
+            
+            Z += Z_i.sum()
+         
+         Z /= N
+         
+         if verbose:
+             print(f'Final Evidence = {Z}')
+         
+         return Z
+    
+     
 
