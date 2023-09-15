@@ -108,7 +108,7 @@ class Posteriorsamples():
      
 
      def plot_posterior_mixture(self, data = None, nbins = 'fd', 
-                                data_label = 'log$T_{90}$', density = True, CL=None):
+                                data_label = 'log$T_{90}$', density = True, CL_levels=None):
          
          
         
@@ -121,32 +121,33 @@ class Posteriorsamples():
          plt.figure()
          #plotting variances of reconstructed posterior
          
-         if CL is not None:
-             percentiles = [(100-CL)/2, 100-(100-CL)/2]
-             y = []
-             for _ in range(10000):
-                 p = dict()
-                 for name in self.names:
-                     i = np.random.randint(len(self.samples['mu_1']))
+         if CL_levels is not None:
+             for CL in CL_levels:
+                 percentiles = [(100-CL)/2, 100-(100-CL)/2]
+                 y = []
+                 for _ in range(10000):
+                     p = dict()
+                     for name in self.names:
+                         i = np.random.randint(len(self.samples['mu_1']))
 
-                     #p[name] = np.random.uniform(low  = self.best_estimates_cl[name][0], high = self.best_estimates_cl[name][1], size=1)[0]
+                         #p[name] = np.random.uniform(low  = self.best_estimates_cl[name][0], high = self.best_estimates_cl[name][1], size=1)[0]
 
-                     p[name] = self.samples[name][i]
-                 #y = sum_of_gaussians(x, p)
-                 y.append(sum_of_gaussians(x, p))
-             y=np.array(y)
-             '''
-             y_max = np.zeros(len(x))
-             y_min = np.zeros(len(x))
-             for i in range(len(x)):
-                 y_max[i] = max(y[i])
-                 y_min[i] = min(y[i])
-             '''
-             low = np.percentile(y, percentiles[0], axis = 0)
-             high = np.percentile(y, percentiles[1], axis = 0)
+                         p[name] = self.samples[name][i]
+                     #y = sum_of_gaussians(x, p)
+                     y.append(sum_of_gaussians(x, p))
+                 y=np.array(y)
+                 '''
+                 y_max = np.zeros(len(x))
+                 y_min = np.zeros(len(x))
+                 for i in range(len(x)):
+                     y_max[i] = max(y[i])
+                     y_min[i] = min(y[i])
+                 '''
+                 low = np.percentile(y, percentiles[0], axis = 0)
+                 high = np.percentile(y, percentiles[1], axis = 0)
 
 
-             plt.fill_between(x, low, high,color = 'mistyrose', alpha = 1, label = f'{CL}% CI')
+                 plt.fill_between(x, low, high,color = 'salmon', alpha = 0.15, label = None )#f'{CL}% CI' if len(CL_levels)>0 else None)
 
          if data is not None:
              plt.hist(data, bins = nbins, density = density, histtype='step', alpha = 1, label = 'data', linewidth=1.5)
@@ -159,7 +160,7 @@ class Posteriorsamples():
          
          
          
-         if CL is None:
+         if CL_levels is None:
             for i in range(len(self.best_estimates)//3):
                 w = self.best_estimates[f'w_{i+1}']
                 mu = self.best_estimates[f'mu_{i+1}']
@@ -173,8 +174,8 @@ class Posteriorsamples():
          
          plt.minorticks_on()
          plt.legend(loc = 'upper left')
-         if CL is not None:
-             fname = f'{self.output_dir}/posterior_plot_CL_{CL}.png'
+         if CL_levels is not None:
+             fname = f'{self.output_dir}/posterior_plot_CL.png'
          else:
              fname = f'{self.output_dir}/posterior_plot_mixtures.png'
          plt.savefig(fname, dpi=200)
