@@ -1,2 +1,2 @@
 # nested_sampling
-nested sampling implementation of GRB exercise for Bayesian Theory of Probability Exam
+Nested Sampling Implementation for the GRB exercise of the Bayesian Probability Theory Exam @ Pisa University Master Course
